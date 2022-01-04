@@ -35,6 +35,12 @@ local function verifyStringNum( val, name )
 	end
 end
 
+local function verifyTableNil( val, name )
+	if val ~= nil and type( val ) ~= 'table' then
+		error( name .. ' must be either of type table or nil', 3 )
+	end
+end
+
 -- Gets an mw.html table representing the infobox
 function methodtable.getHtml( t )
 	local html = mw.html.create( '' )
@@ -64,16 +70,18 @@ end
 -- @param text
 -- @param style
 -- @param class
-function methodtable.addSubHeader( t, text, class, style )
+-- @param attributes
+function methodtable.addSubHeader( t, text, class, style, attributes )
 	verifyStringNum( text, 'text' )
 	verifyStringNumNil( class, 'class' )
 	verifyStringNumNil( style, 'style' )
+	verifyTableNil( attributes, 'attributes' )
 
 	t.args.subHeaders = t.args.subHeaders or {}
 	local i = #t.args.subHeaders + 1
 
 	t.args.subHeaders[i] =
-		{ text = text, style = style, class = class }
+		{ text = text, style = style, class = class, attributes = attributes }
 
 	return t;
 end
@@ -82,15 +90,16 @@ end
 --
 -- @param header
 -- @param class
-function methodtable.addHeader( t, header, class )
+function methodtable.addHeader( t, header, class, attributes )
 	verifyStringNum( header, 'header' )
 	verifyStringNumNil( class, 'class' )
+	verifyTableNil( attributes, 'attributes' )
 
 	t.args.rows = t.args.rows or {}
 	local i = #t.args.rows + 1
 
 	t.args.rows[i] =
-		{ header = header, class = class }
+		{ header = header, class = class, attributes = attributes }
 
 	return t;
 end
@@ -101,17 +110,19 @@ end
 -- @param data
 -- @param class
 -- @param rowClass
-function methodtable.addRow( t, label, data, class, rowClass )
+-- @param attributes
+function methodtable.addRow( t, label, data, class, rowClass, attributes )
 	verifyStringNumNil( label, 'label' )
 	verifyStringNum( data, 'data' )
 	verifyStringNumNil( rowClass, 'rowClass' )
 	verifyStringNumNil( class, 'class' )
+	verifyTableNil( attributes, 'attributes' )
 
 	t.args.rows = t.args.rows or {}
 	local i = #t.args.rows + 1
 
 	t.args.rows[i] =
-		{ data = data, label = label, rowClass = rowClass, class = class }
+		{ data = data, label = label, rowClass = rowClass, class = class, attributes = attributes }
 
 	return t;
 end
@@ -120,7 +131,10 @@ end
 -- This can be eg. a subinfobox or whatever
 --
 -- @param text
-function methodtable.addWikitext( t, text )
+-- @param attributes
+function methodtable.addWikitext( t, text, attributes )
+	verifyTableNil( attributes, 'attributes' )
+
 	if type( text ) == 'table' then
 		text = tostring( text )
 	end
@@ -134,7 +148,7 @@ function methodtable.addWikitext( t, text )
 	local i = #t.args.rows + 1
 
 	t.args.rows[i] =
-		{ wikitext = text }
+		{ wikitext = text, attributes = attributes }
 
 	return t
 end
@@ -144,16 +158,18 @@ end
 -- @param image
 -- @param caption
 -- @param class
-function methodtable.addImage( t, image, caption, class )
+-- @param attributes
+function methodtable.addImage( t, image, caption, class, attributes )
 	verifyStringNum( image, 'image' )
 	verifyStringNumNil( caption, 'caption' )
 	verifyStringNumNil( class, 'class' )
+	verifyTableNil( attributes, 'attributes' )
 
 	t.args.images = t.args.images or {}
 	local i = #t.args.images + 1
 
 	t.args.images[i] =
-		{ image = image, caption = caption, class = class }
+		{ image = image, caption = caption, class = class, attributes = attributes }
 
 	return t;
 end
@@ -162,6 +178,14 @@ function infobox.create( options )
 	local function verifyStringNumNil( val, name )
 		if val ~= nil and type( val ) ~= 'string' and type( val ) ~= 'number' then
 			error( 'Option ' .. name .. ' must be either of type string, number or nil', 3 )
+		end
+
+		return val
+	end
+
+	local function verifyTableNil( val, name )
+		if val  ~= nil and type( val ) ~= 'table' then
+			error( 'Option ' .. name .. ' must be either of type table or nil', 3 )
 		end
 
 		return val
@@ -202,6 +226,9 @@ function infobox.create( options )
 	box.args.headerStyle	= verifyStringNumNil( options.headerStyle, 'headerStyle' )
 	box.args.labelStyle		= verifyStringNumNil( options.labelStyle, 'labelStyle' )
 	box.args.dataStyle		= verifyStringNumNil( options.dataStyle, 'dataStyle' )
+
+	-- Attributes
+	box.args.tableAttributes = verifyTableNil( options.tableAttributes, 'tableAttributes' )
 
 	return box
 end

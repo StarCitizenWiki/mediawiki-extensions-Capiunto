@@ -41,6 +41,11 @@ function render.renderWrapper( html, args )
 				:cssText( args.bodyStyle )
 		end
 
+		if args.tableAttributes then
+			local success = pcall( table.attr, table, args.tableAttributes )
+			-- TODO Error if not successful?
+		end
+
 		return table
 	else
 		html
@@ -56,12 +61,24 @@ end
 -- @param args
 -- @param header
 -- @param class
-function render.renderHeader( html, args, header, class )
-	local th = html:tag( 'tr' )
-		:tag( 'th' )
+-- @param attributes
+function render.renderHeader( html, args, header, class, attributes )
+	local tr = html:tag( 'tr' )
+
+	local th = tr
+		:tag( 'th', { parent = tr } )
 			:attr( 'colspan', 2 )
 			:addClass( 'mw-capiunto-infobox-header' )
 			:wikitext( header )
+
+	if attributes then
+		if type( attributes.row ) == 'table' or type( attributes.label ) == 'table' then
+			pcall( tr.attr, tr, attributes.row )
+			pcall( th.attr, th, attributes.label )
+		else
+			pcall( tr.attr, tr, attributes )
+		end
+	end
 
 	if class then
 		th:addClass( class )
@@ -85,6 +102,18 @@ function render.renderRow( html, args, row )
 		tr:addClass( row.rowClass )
 	end
 
+	if row.attributes then
+		if type( row.attributes.row ) ~= 'table' and
+		   type( row.attributes.label ) ~= 'table' and
+		   type( row.attributes.data ) ~= 'table' then
+			pcall( tr.attr, tr, row.attributes )
+		end
+
+		if type( row.attributes.row ) == 'table' then
+			pcall( tr.attr, tr, row.attributes.row )
+		end
+	end
+
 	if row.label then
 		local th = tr:tag( 'th' )
 			:attr( 'scope', 'row' )
@@ -93,6 +122,10 @@ function render.renderRow( html, args, row )
 
 		if args.labelStyle then
 			th:cssText( args.labelStyle )
+		end
+
+		if row.attributes and type( row.attributes.label ) == 'table' then
+			pcall( th.attr, th, row.attributes.label )
 		end
 	end
 
@@ -113,6 +146,10 @@ function render.renderRow( html, args, row )
 			:cssText( row.dataStyle )
 	end
 
+	if row.attributes and type( row.attributes.data ) == 'table' then
+		pcall( dataCell.attr, dataCell, row.attributes.data )
+	end
+
 	dataCell
 		:newline()
 		:wikitext( row.data )
@@ -122,8 +159,9 @@ end
 --
 -- @param html
 -- @param text
-function render.renderWikitext( html, text )
-	render.renderRow( html, {}, { data = text } )
+-- @param attributes
+function render.renderWikitext( html, text, attributes )
+	render.renderRow( html, {}, { data = text, attributes = attributes } )
 end
 
 -- Renders the title of the infobox into a caption
@@ -206,7 +244,8 @@ function render.renderSubHeaders( html, args )
 			{
 				data = value.text,
 				dataStyle = value.style,
-				rowClass = value.class
+				rowClass = value.class,
+				attributes = value.attributes,
 			}
 		)
 	end
@@ -243,7 +282,8 @@ function render.renderImages( html, args )
 				data = tostring( data ),
 				dataStyle = args.imageStyle,
 				class = args.imageClass,
-				rowClass = image.class
+				rowClass = image.class,
+				attributes = image.attributes,
 			}
 		)
 
@@ -259,9 +299,9 @@ function render.renderRows( html, args )
 
 	for k, row in pairs( args.rows ) do
 		if row.header then
-			render.renderHeader( html, args, row.header, row.class )
+			render.renderHeader( html, args, row.header, row.class, row.attributes )
 		elseif row.wikitext then
-			render.renderWikitext( html, row.wikitext )
+			render.renderWikitext( html, row.wikitext, row.attributes )
 		else
 			render.renderRow(
 				html,
@@ -271,7 +311,8 @@ function render.renderRows( html, args )
 					data = row.data,
 					dataStyle = args.dataStyle,
 					class = row.class,
-					rowClass = row.rowClass
+					rowClass = row.rowClass,
+					attributes = row.attributes,
 				}
 			)
 		end
