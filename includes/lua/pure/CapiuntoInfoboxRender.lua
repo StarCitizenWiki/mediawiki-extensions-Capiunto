@@ -192,6 +192,7 @@ function render.renderTopRow( html, args )
 
 	local th  = html
 		:tag( 'tr' )
+		:addClass( 'mw-capiunto-infobox-top-row' )
 		:tag( 'th' )
 			:attr( 'colspan', 2 )
 			:addClass( 'mw-capiunto-infobox-top' )
@@ -215,6 +216,7 @@ function render.renderBottomRow( html, args )
 
 	local td = html
 		:tag( 'tr' )
+			:addClass( 'mw-capiunto-infobox-bottom-row' )
 			:tag( 'td' )
 				:attr( 'colspan', '2' )
 				:addClass( 'mw-capiunto-infobox-bottom' )
